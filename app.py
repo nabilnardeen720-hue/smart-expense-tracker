@@ -3,14 +3,29 @@ import pandas as pd
 import matplotlib.pyplot as plt
 from datetime import date
 
+# دعم اللغة العربية
+from arabic_reshaper import reshape
+from bidi.algorithm import get_display
+
+# =========================
 # إعداد الصفحة
+# =========================
 st.set_page_config(
     page_title="محفظة الذكاء",
     page_icon="💰",
     layout="wide"
 )
 
+# =========================
+# دالة تعديل النص العربي
+# =========================
+def arabic_text(text):
+    reshaped = reshape(text)
+    return get_display(reshaped)
+
+# =========================
 # عنوان التطبيق
+# =========================
 st.title("💰 محفظة الذكاء")
 st.subheader("تطبيق إدارة المصروفات الشخصية")
 
@@ -50,7 +65,15 @@ with col1:
 with col2:
     category = st.selectbox(
         "الفئة",
-        ["طعام", "سكن", "مواصلات", "ترفيه", "تعليم", "فواتير", "أخرى"]
+        [
+            "طعام",
+            "سكن",
+            "مواصلات",
+            "ترفيه",
+            "تعليم",
+            "فواتير",
+            "أخرى"
+        ]
     )
 
 with col3:
@@ -59,9 +82,13 @@ with col3:
         value=date.today()
     )
 
-# زر الإضافة
+# =========================
+# زر إضافة المصروف
+# =========================
 if st.button("إضافة المصروف"):
+    
     if amount > 0:
+
         new_expense = pd.DataFrame({
             "المبلغ": [amount],
             "الفئة": [category],
@@ -79,11 +106,12 @@ if st.button("إضافة المصروف"):
         st.warning("⚠️ أدخل مبلغ صحيح")
 
 # =========================
-# عرض البيانات
+# عرض جدول المصروفات
 # =========================
 st.header("📋 جدول المصروفات")
 
 if not st.session_state.expenses.empty:
+
     st.dataframe(
         st.session_state.expenses,
         use_container_width=True
@@ -93,18 +121,28 @@ if not st.session_state.expenses.empty:
     # الحسابات
     # =========================
     total_expenses = st.session_state.expenses["المبلغ"].sum()
+
     remaining = budget - total_expenses
 
     col1, col2, col3 = st.columns(3)
 
     with col1:
-        st.metric("💵 الميزانية", f"{budget:.2f}")
+        st.metric(
+            "💵 الميزانية",
+            f"{budget:.2f}"
+        )
 
     with col2:
-        st.metric("💸 إجمالي المصروفات", f"{total_expenses:.2f}")
+        st.metric(
+            "💸 إجمالي المصروفات",
+            f"{total_expenses:.2f}"
+        )
 
     with col3:
-        st.metric("💰 المتبقي", f"{remaining:.2f}")
+        st.metric(
+            "💰 المتبقي",
+            f"{remaining:.2f}"
+        )
 
     # =========================
     # الرسم البياني
@@ -117,29 +155,46 @@ if not st.session_state.expenses.empty:
         .sum()
     )
 
+    # تعديل أسماء الفئات للعربية
+    labels = [
+        arabic_text(label)
+        for label in category_summary.index
+    ]
+
     chart_type = st.radio(
         "اختر نوع الرسم البياني",
         ["دائري", "شريطي"],
         horizontal=True
     )
 
-    fig, ax = plt.subplots(figsize=(7, 5))
+    fig, ax = plt.subplots(figsize=(8, 5))
 
     if chart_type == "دائري":
+
         ax.pie(
             category_summary,
-            labels=category_summary.index,
+            labels=labels,
             autopct='%1.1f%%'
         )
-        ax.set_title("نسبة المصروفات حسب الفئة")
+
+        ax.set_title(
+            arabic_text("نسبة المصروفات حسب الفئة")
+        )
 
     else:
+
         ax.bar(
-            category_summary.index,
+            labels,
             category_summary.values
         )
-        ax.set_title("إجمالي المصروفات حسب الفئة")
-        ax.set_ylabel("المبلغ")
+
+        ax.set_title(
+            arabic_text("إجمالي المصروفات حسب الفئة")
+        )
+
+        ax.set_ylabel(
+            arabic_text("المبلغ")
+        )
 
     st.pyplot(fig)
 
@@ -150,4 +205,7 @@ else:
 # رسالة ختامية
 # =========================
 st.markdown("---")
-st.caption("تم تطوير تطبيق محفظة الذكاء باستخدام Python و Streamlit")
+
+st.caption(
+    "تم تطوير تطبيق محفظة الذكاء باستخدام Python و Streamlit"
+)
